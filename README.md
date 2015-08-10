@@ -1,1 +1,1 @@
-##### * 10 Aug '15 21h -  Log of 6LoWPAN development.
+##### 10 Aug 2015 21h -   Log of 6LoWPAN development.
