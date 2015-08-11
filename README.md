@@ -22,27 +22,36 @@ For each of these issues a couple of things need to be finished/done in order so
 
 ###### 802.15.4 Communication
 1. ***Setting up a PAN***
+
 In order to communicate over 802.15.4 someone has to set up a PAN. This is done by a PAN coördinator. The tasks of this PAN coördinator involves setting a PAN identifier, finding a suitable radio frequency (channel) and assigning a 16-bit short address to himself (0x0000).
 These tasks are done in a device-driver, but before writing a universal device-driver this can be done hardcoded.
-2. *** Joining a PAN ***
+2. ***Joining a PAN***
+
 After a PAN coördinator has set up a PAN other hosts can join that PAN. This can be done by setting the radio-frequency to the same channel as that of the PAN and setting the PAN ID to the ID of the PAN. These tasks are done in a device-driver, but before writing a universal device-driver this can be done hardcoded.
-3. *** Sending and receiving data over PAN ***
+3. ***Sending and receiving data over PAN***
+
 When 2 devices are in the same PAN they can communicate with each other. Therefore, a MAC layer is needed for addressing. Based on the MAC header, the 802.15.4-transceivers will apply address filtering mechanism and discard frames that aren't directed to the node. This communication needs to be examined to see if the 802.15.4 communication runs smoothly before the final item can be finished.
-4. *** Pouring the 802.15.4 MAC framing and communication in a MAC-layer ***
+4. ***Pouring the 802.15.4 MAC framing and communication in a MAC-layer***
+
 This MAC layer provides the mechanisms to encapsulate data in a 802.15.4-MAC frame which is send over the air by the PHY. Add first, this can be done hardcoded, but this can (probably) be integrated in the 6LoWPAN-adaption layer described below.
 
 ###### Simple IPv6 over 802.15.4
-1. *** Send small IPv6-packet over 802.15.4 ***
+1. ***Send small IPv6-packet over 802.15.4***
+
 This is the humble beginning of the adaption layer. The adaption layer receives a small enough packet from the network-layer (IPv6) so that fragmentation and compression isn't needed. This IPv6-packet is encapsulated in a 802.15.4-MAC frame which is passed on to the PHY and sent to a remote host. The received frame is decapsulated and the IPv6-packet is examined. If the IPv6-packet is received correctly, I can proceed to the next key issue.
 
 ###### Full 6LoWPAN adaption layer
-1. *** Add header compression ***
+1. ***Add header compression***
+
 The tiny adaption layer from previous issue is extended with header compression. This can be done with several compression schemes.
-2. *** Add fragmentation for too big packets ***
+2. ***Add fragmentation for too big packets***
+
 The tiny adaption layer from previous issue is extended with fragmentation. When an entire IPv6 packet passed by the network layer doesn't fit into a single 802.15.4-MAC frame, the IPv6-packet is fragmented and sent seperately over the air. At the receiving host the packet is reassembled and examined for correctness.
-3. *** Add Mesh routing ***
+3. ***Add Mesh routing***
+
 The tiny adaption layer from previous issue is extended with Frame Delivery in a Link Layer Mesh. This is done with the 6LoWPAN Mesh header and is also known as mesh-under network.
-4. *** Add broadcast messaging and duplicate packet suppression ***
+4. ***Add broadcast messaging and duplicate packet suppression***
+
 The tiny adaption layer from previous issue is extended with LoWPAN Broadcast with the help of the 6LoWPAN Broadcast Header. Duplicate Packet Suppression is herefore a requirement.
 ###### 6LoWPAN Neighbour Discovery
-1. *** WIP ***
+1. ***WIP***
