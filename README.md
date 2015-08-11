@@ -14,7 +14,7 @@ For explanatory reasons and to give myself a grip during development, I will giv
 So the entire project exists out of 4 key issues, which build up incrementally. This 4 key issues are:
 
 - **802.15.4 Communication**
-- **Simple IPv4 over 802.15.4**
+- **Simple IPv6 over 802.15.4**
 - **Full 6LoWPAN**
 - **6LoWPAN Neighbour Discovery**
 
