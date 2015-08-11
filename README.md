@@ -21,7 +21,7 @@ So the entire project exists out of 4 key issues, which build up incrementally. 
 For each of these issues a couple of things need to be finished/done in order solve the key issue itself. An overview of each item that needs to be done before I can proceed to the next item to solve a key issue is given below:
 
 ###### 802.15.4 Communication
-1. *** Setting up a PAN ***
+1. ***Setting up a PAN***
 In order to communicate over 802.15.4 someone has to set up a PAN. This is done by a PAN coördinator. The tasks of this PAN coördinator involves setting a PAN identifier, finding a suitable radio frequency (channel) and assigning a 16-bit short address to himself (0x0000).
 These tasks are done in a device-driver, but before writing a universal device-driver this can be done hardcoded.
 2. *** Joining a PAN ***
