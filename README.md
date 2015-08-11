@@ -30,9 +30,11 @@ After a PAN coördinator has set up a PAN other hosts can join that PAN. This ca
 When 2 devices are in the same PAN they can communicate with each other. Therefore, a MAC layer is needed for addressing. Based on the MAC header, the 802.15.4-transceivers will apply address filtering mechanism and discard frames that aren't directed to the node. This communication needs to be examined to see if the 802.15.4 communication runs smoothly before the final item can be finished.
 4. ***Pouring the 802.15.4 MAC framing and communication in a MAC-layer  -***
 This MAC layer provides the mechanisms to encapsulate data in a 802.15.4-MAC frame which is send over the air by the PHY. Add first, this can be done hardcoded, but this can (probably) be integrated in the 6LoWPAN-adaption layer described below.
+
 ###### Simple IPv6 over 802.15.4
 1. ***Send small IPv6-packet over 802.15.4  -***
 This is the humble beginning of the adaption layer. The adaption layer receives a small enough packet from the network-layer (IPv6) so that fragmentation and compression isn't needed. This IPv6-packet is encapsulated in a 802.15.4-MAC frame which is passed on to the PHY and sent to a remote host. The received frame is decapsulated and the IPv6-packet is examined. If the IPv6-packet is received correctly, I can proceed to the next key issue.
+
 ###### Full 6LoWPAN adaption layer
 1. ***Add header compression  -***
 The tiny adaption layer from previous issue is extended with header compression. This can be done with several compression schemes.
@@ -42,5 +44,6 @@ The tiny adaption layer from previous issue is extended with fragmentation. When
 The tiny adaption layer from previous issue is extended with Frame Delivery in a Link Layer Mesh. This is done with the 6LoWPAN Mesh header and is also known as mesh-under network.
 4. ***Add broadcast messaging and duplicate packet suppression  -***
 The tiny adaption layer from previous issue is extended with LoWPAN Broadcast with the help of the 6LoWPAN Broadcast Header. Duplicate Packet Suppression is herefore a requirement.
+
 ###### 6LoWPAN Neighbour Discovery
 1. ***WIP***
