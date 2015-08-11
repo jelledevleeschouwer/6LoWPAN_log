@@ -47,3 +47,6 @@ The tiny adaption layer from previous issue is extended with LoWPAN Broadcast wi
 
 ###### 6LoWPAN Neighbour Discovery
 1. ***WIP***
+
+##### 11 Aug 2015 22h -   Modified GEOMESS with MTU 127.
+Added a new device-structure to the geomess-library. This device represents the 6LoWPAN adaption layer. Currently the simulation is done in the adaption layer itself but I will update this tommorrow to make use of a device-driver. The device-driver will be responsible for transmitting and receiving on/from the Geomesh-network, while the adaption layer (pico_dev_sixlowpan) whill be responsible for the right formatting and MAC encapsulation to pass on to the device-driver. The development of the adaption layer will occur in pico_dev_sixlowpan.
