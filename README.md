@@ -98,3 +98,10 @@ So when the 6LoWPAN adaption-layer calls 'transmit()' a radio-instance needs to 
 ##### 12 Aug 2015 15h -   Working repository.
 All my code can be found in my fork of daniele's Geomess repository on: https://github.com/jelledevleeschouwer/geomess
 The working directory is 'apps/IEEE802154'
+
+##### 12 Aug 2015 20h -   Tested hardcoded 802.15.4-communication over Geomess.
+Tried to send some hardcoded 802.15.4-MAC frames through *pico_dev_sixlowpan* over the Geomess-network, with sucess. Took some raw data buffer of a 6LoWPAN sample capture and used dev-send to send over Geomess.
+After setting the link-layer encapsulation type of the pcap-geomess node, the traffic could be examined in Wireshark. The pcap-file of the hardcoded communication can be found in this repository under 'hardcoded_802_15_4.pcap'.
+The first 2 packets aren't correctly formatted since that are ICMPv6 router sollication packets from picoTCP's Neighbour Discovery's DAD. When the time arrives that those 2 packets are correctly parsed, I'm heading in the right direction. ;-)
+
+TODO: Dynamically encapsulate *to-send* data in an IEEE802.15.4-MAC frame.
