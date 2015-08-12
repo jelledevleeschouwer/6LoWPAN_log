@@ -81,7 +81,7 @@ int pico_sixlowpan_set_radio(struct pico_device *dev, radio_t *radio);
 
 Now the 6LoWPAN adaption layer has a direct interface with the device driver. In this case, the device-driver (radio_driver) transmits and receives data on and from the Geomess-network. This is done by making the radio_t structure itself a custom one, with a Geomess-connection as a member like so:
 
-```
+```C
 typedef struct gm_radio
 {
 	radio_t radio;
