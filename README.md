@@ -50,3 +50,47 @@ The tiny adaption layer from previous issue is extended with LoWPAN Broadcast wi
 
 ##### 11 Aug 2015 22h -   Modified GEOMESS with MTU 127.
 Added a new device-structure to the geomess-library. This device represents the 6LoWPAN adaption layer. Currently the simulation is done in the adaption layer itself but I will update this tommorrow to make use of a device-driver. The device-driver will be responsible for transmitting and receiving on/from the Geomesh-network, while the adaption layer (pico_dev_sixlowpan) whill be responsible for the right formatting and MAC encapsulation to pass on to the device-driver. The development of the adaption layer will occur in pico_dev_sixlowpan.
+
+##### 12 Aug 2015 14h -   Differentiated 6LoWPAN adaption layer from device-driver.
+Today, I differentiated the 6LoWPAN adaption layer (pico_dev_sixlowpan) from the application-specific device-driver. Now, the 6LoWPAN-header provides a generic device-driver structure (radio_t). Every device-driver must be compatible with this structure. The 6LoWPAN adaption layer can then communicate with the device-driver. So here is how it works with a Geomess-capable device-driver:
+
+**pico_dev_sixlowpan** is a custom pico_device-structure with internal structure as follows:
+
+```C
+struct pico_device_sixlowpan {
+	struct pico_device dev;
+	radio_t *radio;
+};
+```
+
+*radio_t* is defined in the header of *pico_dev_sixlowpan* (pico_dev_sixlowpan.h) like this:
+
+````C
+typedef struct RADIO {
+	int (*transmit)(struct RADIO *radio, const void *buf, int len);
+	int (*receive)(struct RADIO *radio, void *buf, int len);
+} radio_t;
+```
+
+For now, the radio-structure only defines a transmit- and receive-function. So, the application-developer can now provide a device-specific driver by instantiating a struct of type '*radio_t*' an providing all the given callback-functions.
+Then, he can assign that specific radio-instance to the 6LoWPAN-adaption layer by making use of the function:
+
+```C
+int pico_sixlowpan_set_radio(struct pico_device *dev, radio_t *radio);
+```
+
+Now the 6LoWPAN adaption layer has a direct interface with the device driver. In this case, the device-driver (radio_driver) transmits and receives data on and from the Geomess-network. This is done by making the radio_t structure itself a custom one, with a Geomess-connection as a member like so:
+
+```
+typedef struct gm_radio
+{
+	radio_t radio;
+	char *sock;
+	GEOMESS conn;
+}
+gm_radio_t;
+```
+
+So when the 6LoWPAN adaption-layer calls 'transmit()' a radio-instance needs to be given. The transmit-function in the device-driver will then transmit the data on its own specific Geomess-connection.
+
+**[NOTE]**: The seperate device-driver isn't really a requirement, the transmit- and receive-function could also be defined in the main-file, but seperating it gives me a nice overview of the application-structure and allows me to do some more simulation of the device itself.
