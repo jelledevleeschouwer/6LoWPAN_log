@@ -94,3 +94,7 @@ gm_radio_t;
 So when the 6LoWPAN adaption-layer calls 'transmit()' a radio-instance needs to be given. The transmit-function in the device-driver will then transmit the data on its own specific Geomess-connection.
 
 **[NOTE]**: The seperate device-driver isn't really a requirement, the transmit- and receive-function could also be defined in the main-file, but seperating it gives me a nice overview of the application-structure and allows me to do some more simulation of the device itself.
+
+##### 12 Aug 2015 15h -   Working repository.
+All my code can be found in my fork of daniele's Geomess repository on: https://github.com/jelledevleeschouwer/geomess
+The working directory is 'apps/IEEE802154'
