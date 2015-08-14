@@ -105,3 +105,8 @@ After setting the link-layer encapsulation type of the pcap-geomess node, the tr
 The first 2 packets aren't correctly formatted since that are ICMPv6 router sollication packets from picoTCP's Neighbour Discovery's DAD. When the time arrives that those 2 packets are correctly parsed, I'm heading in the right direction. ;-)
 
 TODO: Dynamically encapsulate *to-send* data in an IEEE802.15.4-MAC frame.
+
+##### 13 Aug 2015 20h -   Moved pico_dev_sixlowpan to picotcp/modules.
+
+##### 14 Aug 2015 12h -   Simulated radio sends Association-Request.
+Simulated Radio-driver now sends a association request when it's not the first node. First Node is identified bythe ID-command-line variable set to 0. This association request is send to the PAN-coördinator (0x000) to associate with a 802.15.4 PAN and retrieve a 16-bit short address given by the coördinator. In the afternoon, I will make the PAN coördinator respond to association requests and make all MAC framing a bit more accessible and generic. If this gets finished, I will probably be able to send my first IPv6 frames without compression/fragmentation/... over 802.15.4 PAN tonight.
