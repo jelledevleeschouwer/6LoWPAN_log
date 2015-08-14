@@ -110,3 +110,26 @@ TODO: Dynamically encapsulate *to-send* data in an IEEE802.15.4-MAC frame.
 
 ##### 14 Aug 2015 12h -   Simulated radio sends Association-Request.
 Simulated Radio-driver now sends a association request when it's not the first node. First Node is identified bythe ID-command-line variable set to 0. This association request is send to the PAN-coördinator (0x000) to associate with a 802.15.4 PAN and retrieve a 16-bit short address given by the coördinator. In the afternoon, I will make the PAN coördinator respond to association requests and make all MAC framing a bit more accessible and generic. If this gets finished, I will probably be able to send my first IPv6 frames without compression/fragmentation/... over 802.15.4 PAN tonight.
+
+##### 14 Aug 2015 15h -   Should I be responsible for starting/joining a PAN?
+
+To set up a PAN, a coördinator must perform an Energy Detection scan, choose a proper channel, choose a PAN identifier and generate a 16-bit short-address for himself (0x0000). Then, a coördinator has properly set up a 802.15.4 PAN.
+
+This isn't really a hard thing to do, but nevertheless application-dependent. An application developer can for example choose to use either beacon-enabled mode or beacon-disabled mode. To include this functionality in picoTCP would be too demanding and I think a right choise is to leave this starting of a PAN up to the application-developer.
+
+To join a PAN, a 802.15.4-device must perform an Active or Passive Channel scan, send out an association request and wait for the PAN-coördinator to answer with an Association-response in order to only retrieve a 16-bit short address. Since every 802.15.4 should normally already have a unique 64-bit identifier, isn't the 16-bit short address a bit superfluous. Does the hard work of obtaining a 16-bit short address weigh up against disadvantage of having a somewhat bigger unique 64-bit address?
+
+So I choose to not integrate this possibility of the association procedure in my implementation of 6LoWPAN. I think the 6LoWPAN should be mere an adaption layer and not really a 'maintaining-a-802.15.4-PAN'-layer.
+
+So in my implementation of 6LoWPAN I will assume the application-developer himself has already set-up the PAN, either hardcoded (by setting the channel, PAN ID and not using a 16-bit short address by code) or dynamically (by performing an Active or Passive Channel scan and performing the association procedure).
+
+So this means the 6LoWPAN adaption layer already assumes a couple of things:
+
+1. That the radio has 64-bit link layer address, which is retrieved by '*getEUI64()*'.
+2. That the radio already has configured the PAN identifier, which is retrieved by '*getPAN_ID()*'.
+3. That the radio can already communicate in the PAN by conforming to the 2 previous assumptions.
+4. That the radio possibly has a 16-bit short link layer address, which is retrieved by '*getSHORT16()*', and that if the radio hasn't got a 16-bit short this function will get the value 0xFFFF.
+5. That the radio has a possibility to set the 16-bit short afterwards, which is set by '*setSHORT16()*', by means of 6LoWPAN Neighbour Discovery.
+
+##### 14 Aug 2015 15h -   Removed simulated association procedure.
+Already removed the simulated 802.15.4 Association Procedure, since I will configure the 802.15.4-devices by command line variables.
