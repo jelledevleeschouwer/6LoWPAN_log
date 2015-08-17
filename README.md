@@ -133,3 +133,12 @@ So this means the 6LoWPAN adaption layer already assumes a couple of things:
 
 ##### 14 Aug 2015 15h -   Removed simulated association procedure.
 Already removed the simulated 802.15.4 Association Procedure, since I will configure the 802.15.4-devices by command line variables.
+
+##### 17 Aug 2015 17h -   Sent my first 6LoWPAN packet.
+Sent my first 6LowPAN packet over Geomess today. It's a Neighbour Solicitation ICMPv6 packet coming from picoTCP's Duplicate Address Detection (DAD). The packet is dynamically formatted and derives it's Link-Layer framing options an addresses from the IPv6 packet header.
+
+##### 17 Aug 2015 17h -   Finished key issue *Simple IPv6 over 802.15.4*.
+With the previous jrnl-entry about sending my first 6LoWPAN packet, i'm halfway completing key issue '*Simple IPv6 over 802.15.4*' as described in entry [11 Aug 2015 18h](https://github.com/jelledevleeschouwer/sixlowpan_log#11-aug-2015-18h-----6lowpan-development-process). The decapsulation procedure should still be implemented on the other side of the network.
+
+##### 17 Aug 2015 22h -   Working on unframing of 802.15.4 packets [WIP].
+Will be done tommorrow morning. Then, I can start on compression. Probably start off with compression scheme LOWPAN_HC1 and HC_UDP.
