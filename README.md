@@ -142,3 +142,18 @@ With the previous jrnl-entry about sending my first 6LoWPAN packet, i'm halfway 
 
 ##### 17 Aug 2015 22h -   Working on unframing of 802.15.4 packets [WIP].
 Will be done tommorrow morning. Then, I can start on compression. Probably start off with compression scheme LOWPAN_HC1 and HC_UDP.
+
+##### 19 Aug 2015 23h -   Architecture overhaul, use of PICO_FRAME.
+Cleaned up my code a lot, and did some architectural changes. From now on, I will work with pico_frame as well just like ethernet. There's some minor twists though.
+
+First of all, I translate the pico_frame to a 6LoWPAN-adaption layer frame *sixlowpan_frame*.
+
+I have also created a seperate pico_device_init method just for 6LoWPAN-devices namely, *pico_sixlowpan_init*. This is because with the generic pico_device-init method I couldn't generate a Link-Local address from the EUI-64 address or from the short 16-bit address. With *pico_sixlowpan_init* this capability is there.
+
+Then, I've added a *pico_sixlowpan_addr ** to the pico_device-structure. This to allow pico_device to have an extended 64-bit address or a short 16-bit address. This could've been in the pico_dev_sixlowpan itself, but putting it in pico_device adds the capability to detect whether or not the device is 6LoWPAN-device. Just like with the *eth*-member of pico_device.
+
+When a frame needs to be sent to the device in '*devloop_sendto_dev*', the device is checked for a sixlowpan-address. When it has, the frame is sent to the 6LoWPAN adaption layer. This is just like when the device has an ethernet-address. But instead of sending the frame to *pico_stack*, the frame is sent directly to the 6LoWPAN-adaption layer.
+
+Now in the sixlowpan_frame, I have a couple of buffers that allow me to work efficiently when inserting and removing chunks of the frames.
+
+I'm still a bit looking for the best way to add 6LoWPAN headers and compressing IPv6 and next-header fields. But compressing should be done by the end of the week.
