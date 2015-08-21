@@ -157,3 +157,10 @@ When a frame needs to be sent to the device in '*devloop_sendto_dev*', the devic
 Now in the sixlowpan_frame, I have a couple of buffers that allow me to work efficiently when inserting and removing chunks of the frames.
 
 I'm still a bit looking for the best way to add 6LoWPAN headers and compressing IPv6 and next-header fields. But compressing should be done by the end of the week.
+
+##### 21 Aug 2015 22h -   [WIP] LOWPAN_IPHC stateless compressing almost finished.
+Stateless LOWPAN_IPHC compression is almost finished. Tommorrow-morning it will probably be done, there are still a couple of minor flaws and ugly code but I will fix that tommorrow. Then I can move on to LOWPAN_NHC in the afternoon and probably start with decoding LOWPAN_IPHC and LOWPAN_NHC somewhere around 16.00h. On Sunday I will write unit tests, and then on Monday I will finish the decompression schemes.
+
+Like I said, now only stateless IPHC is implemented when I move on to 6LoWPAN-ND in september, I will make IPHC use Statefull Compression as well.
+
+The code is starting to look pretty cool and I'm pretty satisfied about the structure and complexity, but it is getting big though. I think it would be much clearer if I split up IPHC, 6LoWPAN and IEEE802.15.4. But still, when I look into the code of other 6LoWPAN implementation they have A LOT more codebase :-)
