@@ -164,3 +164,12 @@ Stateless LOWPAN_IPHC compression is almost finished. Tommorrow-morning it will 
 Like I said, now only stateless IPHC is implemented when I move on to 6LoWPAN-ND in september, I will make IPHC use Statefull Compression as well.
 
 The code is starting to look pretty cool and I'm pretty satisfied about the structure and complexity, but it is getting big though. I think it would be much clearer if I split up IPHC, 6LoWPAN and IEEE802.15.4. But still, when I look into the code of other 6LoWPAN implementation they have A LOT more codebase :-)
+
+##### 27 Aug 2015 23h -   Working on 6LoWPAN fragmentation & reassembly.
+So, this weekend didn't turn out like I planned. I planned to do compression & decompression on saturday, to work on unit tests on sunday. But some family-related stuff came in between an messed up my schedule a bit. 
+
+But no worries, this week I finished LOWPAN_IPHC compression and decompression. Also LOWPAN_NHC-compression is implemented for IPv6 Extension Headers and UDP Headers. Only stateless compression though, statefull compression with the dissemination of contexts will be something when I'm working on 6LoWPAN-ND. I've noticed quite a lot of updates to the original IPv6-ND, so that will take quite some time as well.
+
+So since I was done with LOWPAN_IPHC, I started on fragmentation which is now implemented as well, reassembly of fragmented packets is still WIP, though. In [my latest capture](https://github.com/jelledevleeschouwer/sixlowpan_log/blob/master/6LoWPAN_ping_and_udp.pcap) you can examine a dump of some communication between 2 hosts. The first host is sending ICMPv6 ping-requests to the second, while the second is sending some rubbish UDP-packets to the first Host. As you can see, all the packets are encoded in either 6LoWPAN_IPV6 (when the packets are small enough to fit in a single IEEE802.15.4-frame), 6LoWPAN_IPHC (for IPv6 headers) or 6LoWPAN_NHC (for UDP packets). The plain white packets you can see are the first frames of fragmented IPv6-datagrams. In the following packet the packet is reassembled by Wireshark and the contents can be examined.
+
+Tommorrow-morning I will first write some Unit-tests because I didn't have the chance to do that, before I continue finish the 6LoWPAN-fragmentation.
