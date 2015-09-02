@@ -166,10 +166,68 @@ Like I said, now only stateless IPHC is implemented when I move on to 6LoWPAN-ND
 The code is starting to look pretty cool and I'm pretty satisfied about the structure and complexity, but it is getting big though. I think it would be much clearer if I split up IPHC, 6LoWPAN and IEEE802.15.4. But still, when I look into the code of other 6LoWPAN implementation they have A LOT more codebase :-)
 
 ##### 27 Aug 2015 23h -   Working on 6LoWPAN fragmentation & reassembly.
-So, this weekend didn't turn out like I planned. I planned to do compression & decompression on saturday, to work on unit tests on sunday. But some family-related stuff came in between an messed up my schedule a bit. 
+So, this weekend didn't turn out like I planned. I planned to do compression & decompression on saturday, to work on unit tests on sunday. But some family-related stuff came in between an messed up my schedule a bit.
 
 But no worries, this week I finished LOWPAN_IPHC compression and decompression. Also LOWPAN_NHC-compression is implemented for IPv6 Extension Headers and UDP Headers. Only stateless compression though, statefull compression with the dissemination of contexts will be something when I'm working on 6LoWPAN-ND. I've noticed quite a lot of updates to the original IPv6-ND, so that will take quite some time as well.
 
 So since I was done with LOWPAN_IPHC, I started on fragmentation which is now implemented as well, reassembly of fragmented packets is still WIP, though. In [my latest capture](https://github.com/jelledevleeschouwer/sixlowpan_log/blob/master/6LoWPAN_ping_and_udp.pcap) you can examine a dump of some communication between 2 hosts. The first host is sending ICMPv6 ping-requests to the second, while the second is sending some rubbish UDP-packets to the first Host. As you can see, all the packets are encoded in either 6LoWPAN_IPV6 (when the packets are small enough to fit in a single IEEE802.15.4-frame), 6LoWPAN_IPHC (for IPv6 headers) or 6LoWPAN_NHC (for UDP packets). The plain white packets you can see are the first frames of fragmented IPv6-datagrams. In the following packet the packet is reassembled by Wireshark and the contents can be examined.
 
 Tommorrow-morning I will first write some Unit-tests because I didn't have the chance to do that, before I continue finish the 6LoWPAN-fragmentation.
+
+##### 31 Aug 2015 21h -   Refactoring 6LoWPAN
+Today I refactored the 6LoWPAN and started writing unit tests. Spent a lot of time figuring out how to efficiently work with the dispatch types. Since, most of the time I'm working with bitfields, so if I want to assign a value to a bitfield this has to be a literal because of alignment. So I updated the dispatch-values to preprocessor-macros wich makes it less lines of code and cleaner. A downside to this implementation is that my static path count goes up. But I will have to see what it does in the TICS results.
+
+I've also updated the LOWPAN_NHC compression logic for IPv6 Extension headers since there where some issues there.
+
+##### 01 Sep 2015 09h -   Worked on fragmentation.
+Worked on fragmentation today. My plan was to finish reassembly of fragmented frames but I discovered there was an issue in my fragmentation logic. So I've updated this first before I moved on to reassembly. Didn't have time to finish reassembly though, had to go to Leuven to get my key for my room. Will work in Leuven next week, much more quiet...
+
+##### 02 Sep 2015 23h -   Reassembly finished.
+Reassembly of fragmented 6LoWPAN frames is implemented today.
+
+##### 02 Sep 2015 23h -   Updated pico_device.
+I've updated the pico_device-structure with a media layer type-enum type, like Maxime's proposal. Before the pico_device_init()-call this mode can be set to something not 0 (0 means Ethernet or LL_MODE_ETHERNET) to express another type of L2, in this case 1 or LL_MODE_SIXLOWPAN, which means that the device is a 6LoWPAN-capable device.
+
+
+If existing drivers check for ethernet-devices with;
+```C
+if (dev->eth) {
+       /* ... */
+}
+```
+then this implementation is not backwards compatible with existing drivers though. Since the eth-pointer can also be set for, for example, 6LoWPAN-devices. The proper check for ethernet devices should be:
+```C
+if (!dev->mode && dev->eth) {
+       /* ... */
+}
+```
+But as long as existing applications don't work with 6LoWPAN-devices this shouldn't be an issue.
+
+##### 03 Sep 2015 00h -   Frame delivery in a link layer MESH.
+I wanted to start on frame delivery in a Link Layer Mesh today but I have a bit of trouble understanding how the nodes can determine their next hop. I understand that if the 6LoWPAN adaption layer receives a IPv6-packet from the stack, the link layer-addresses can be derived from the SRC- and DST- IPv6-adresses. So you know the source and final destination address.
+
+But then you have to sent your frame on the network. But to which L2-address? Is this a feature in 6LoWPAN-ND? I should examine this. But for now I think I should leave MESH addressing for what it is and move on to 6LoWPAN-ND. Since prepending a LOWPAN_MESH header is pretty simple and straightforward I can still implement this when I understand the next-hop determination.
+
+##### 03 Sep 2015 00h -   6LoWPAN overview.
+
+For informational purposes a small overview of the structure of the 6LoWPAN-adaption layer:
+
+```
++-------------------+                               6LoWPAN
+|      picoTCP      |
+|                   |
+|                *  |                             SEND                 RECEIVE
+|  device-tree  / \ |    +----------------------------+-----------------------+
+|              *   * <-> |         TRANSLATING        |    PICO_STACK_RECV    | 
++-------------------+    +--------------------------v-+-----------+---------^-+
+                         |         COMPRESSING        |   DEFRAG  |           |
+                         +--------------------------v-+---------^-+   DECOMP  |
+                         |                            |   DECOMP  |           |
+                         |        FRAGMENTATION       +---------^-+---------^-+
+                         |                            |     STRUCTURE/UNBUF   |
+                         +--------------------------v-+---------------------^-+
+                                                    v                       ^
+                                                +---v-----------------------^-+
+                                                |             RADIO           |
+                                                +-----------------------------+
+```
