@@ -218,7 +218,7 @@ For informational purposes a small overview of the structure of the 6LoWPAN-adap
 |                   |
 |                *  |                             SEND                 RECEIVE
 |  device-tree  / \ |    +----------------------------+-----------------------+
-|              *   * <-> |         TRANSLATING        |    PICO_STACK_RECV    | 
+|              *   * <-> |         TRANSLATING        |    PICO_STACK_RECV    |
 +-------------------+    +--------------------------v-+-----------+---------^-+
                          |         COMPRESSING        |   DEFRAG  |           |
                          +--------------------------v-+---------^-+   DECOMP  |
@@ -231,3 +231,6 @@ For informational purposes a small overview of the structure of the 6LoWPAN-adap
                                                 |             RADIO           |
                                                 +-----------------------------+
 ```
+
+##### 04 Sep 2015 18h -   Worked on IEEE802.15.4 Address Filtering.
+Thought about 6LoWPAN and the MESH networking last night and it suddenly all became pretty clear, which is nice! Probably because of the coffee, couldn't sleep. I will probably pour this in a schematic a schematic during the weekend and post it but the first thing I needed to do was: ***Fixing*** how I work with ***IEEE802.15.4-address*** (because the current handling pretty much sucks) and implement the ***Address Filtering*** of the IEEE802.15.4 MAC layer. Then I can work furter on the broadcast duplicate frame suppression. So I worked on that today. I've Also immediately written Unit Tests so I'm quite certain that it will not fail further on.
