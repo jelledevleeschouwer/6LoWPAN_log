@@ -234,3 +234,88 @@ For informational purposes a small overview of the structure of the 6LoWPAN-adap
 
 ##### 04 Sep 2015 18h -   Worked on IEEE802.15.4 Address Filtering.
 Thought about 6LoWPAN and the MESH networking last night and it suddenly all became pretty clear, which is nice! Probably because of the coffee, couldn't sleep. I will probably pour this in a schematic a schematic during the weekend and post it but the first thing I needed to do was: ***Fixing*** how I work with ***IEEE802.15.4-address*** (because the current handling pretty much sucks) and implement the ***Address Filtering*** of the IEEE802.15.4 MAC layer. Then I can work furter on the broadcast duplicate frame suppression. So I worked on that today. I've Also immediately written Unit Tests so I'm quite certain that it will not fail further on.
+
+##### 07 Sep 2015 22h -   +---+                    +---+
+                                                            | A |                    | B |
+                                                                 LAST   EQ   EQ           +---+                    +---+        LAST   EQ   EQ
+                                                                  SEQ  SRC  SEQ  SRC DISCARD     |                        |      SEQ  SRC  SEQ  SRC DISCARD
+                                                                  +---+----+----+----+-------+    1   --------------->>>   1     +---+----+----+----+-------+
+                                                                  | 1 |  A |    |    |       |    |                        |     | 0 |FFFF|  > | != |   NO  |
+                                                                  +---+----+----+----+-------+    1   <<<---------------   1     +---+----+----+----+-------+
+                                                                  | 1 |  A | == | == |  YES  |    |                        |     | 1 |  A |    |    |       |
+                                                                  +---+----+----+----+-------+    2   --------------->>>   |     +---+----+----+----+-------+
+                                                                  | 2 |  A | == | == |  YES  |    |                        |     | 1 |  A |    |    |       |
+                                                                  +---+----+----+----+-------+    3   --------------->>>   |     +---+----+----+----+-------+
+                                                                  | 3 |  A | == | == |  YES  |    |                        |     | 1 |  A |    |    |       |
+                                                                  +---+----+----+----+-------+    4   --------------->>>   |     +---+----+----+----+-------+
+                                                                  | 4 |  A | == | == |  YES  |    |                        |     | 1 |  A |    |    |       |
+                                                                  +---+----+----+----+-------+    5   --------------->>>   |     +---+----+----+----+-------+
+                                                                  | 5 |  A | == | == |  YES  |    |                   |    |     | 1 |  A |    |    |       |
+                                                                  +---+----+----+----+-------+    |                   +--- 2     +---+----+----+----+-------+
+                                                                  | 5 |  A |    |    |       |    |                   |    |     | 1 |  A |  > | == |   NO  |
+                                                                  +---+----+----+----+-------+    2   <<<---------------  2/3    +---+----+----+----+-------+
+                                                                  | 5 |  A |  < | == |  YES  |    |                   |    |     | 2 |  A |  > | == |   NO  |
+                                                                  +---+----+----+----+-------+    3   <<<---------------  3/4    +---+----+----+----+-------+
+                                                                  | 5 |  A |  < | == |  YES  |    |                   |    |     | 3 |  A |  > | == |   NO  |
+                                                                  +---+----+----+----+-------+    4  <<<---------------  4/5     +---+----+----+----+-------+
+                                                                  | 5 |  A |  < | == |  YES  |    |                        |     | 4 |  A |  > | == |   NO  |
+                                                                  +---+----+----+----+-------+    5   <<<---------------   5     +---+----+----+----+-------+
+                                                                  | 5 |  A | == | == |  YES  |    |                        |     | 5 |  A |    |    |       |
+                                                                  +---+----+----+----+-------+    ~                        ~     +---+----+----+----+-------+
+
+##### 07 Sep 2015 23h -   Broadcast transmission/forwarding and duplicate suppression.
+
+After adding some final touches to the Address Filtering and fragmentation, I worked further on the broadcasting. The prepending of the broadcast header with the sequence number was a piece of cake and I actually finished it previous week already. But I had some difficulty with updating the SRC-address when forwarding a broadcast. Somehow some bytes in the frame where zeroed out. Eventually it was caused by the function '*pico_ieee_addr_from_flat*'. When copying a short address from a flat buffer therein, too much memory was copied over which caused the beginning of my payload buffer being cleared. But that being fixed there were still some issues involving duplicate broadcast suppression.
+
+At first, the idea was to just store the sequence number of the last broadcast session and the source-address of that same session. This way, when a broadcast frame is received, the sequence number and source address can be checked for and when they match, the frame is a duplicate and will be discarded. But I thought that every time a node forwards a broadcast a frame, he should update the source address to his own and rebroadcast the frame in its turn. In this last scenario, the duplicate suppression like the first idea would not work, since, every time a host receives the broadcast-frame that the node initially broadcasted in the first place, it will have another source address, that of the last forwarding hop.
+Now, the entire LOWPAN_IPHC-compression is based on the fact that IPv6-addresses are derived from Link Layer-addresses, so if I would update the source-address when forwarding a broadcast frame like I described, the decompression of the Network-addresses would be no longer possible. Since the received source address might not be the actual origin source address. So the second idea was based on the fact that the src-addresses shouldn't be updated on broadcast forwarding. But with this mechanism when a node is too slow to update his sequence number before he receives another packet, wich is the case with neighbour sollicitations during IPv6-ND DAD, the node will never be able to detect a duplicate broadces since every broadcast sequence number will be different from the stale last sequence number of the node.
+The final approach then was to share the sequence number over the network by every time when a node successfully retransmits a broadcast frame, it sets his own sequence number-offset to the sequence number of the last broadcast frame he succesfully retransmitted. When a node then initiates a broadcast-session he will increment the sequence number on its own and send a broadcast-frame with a sequence number that is close to unique on the network. If to nodes happen to this at the same moment, there's still the check of whether the received src-address is not equal to the src address of the last broadcast session.
+
+That last approach is a bit more clear in the schematic below. In this example, node A will initiate a broadcast session with sequence number 1. Node B receives the broadcast and checks wether the sequence number is not below or equal to his sequence number, if this is not the case he will retransmit the broadcast in its turn. If the sequence number is the same or smaller, the node checks whether the src address is not equal to the source-address of the last succesfull broadcast session. When this is the same he will detect a duplicate and suppress it. In the initial state this isn't the case and the node B will retransmit the broadcast. Node A receives it, performs the checks described in the '**legenda**' and detect a duplicate.
+
+The rest of the schematic is the same except the case that node B doesn't have enough time to respond at once on the received broadcast and update it's sequence number accordingly.
+
+```
+                              +---+            +---+
+                              | A |            | B |
+     LAST   EQ   EQ           +---+            +---+        LAST   EQ   EQ
+ SEQ  SRC  SEQ  SRC DISCARD     |                |      SEQ  SRC  SEQ  SRC DISCARD
++---+----+----+----+-------+    1   ------->>>   1    +---+----+----+----+-------+
+| 1 |  A |    |    |       |    |                |    | 0 |FFFF|  > | != |   NO  |
++---+----+----+----+-------+    1   <<<-------   1    +---+----+----+----+-------+
+| 1 |  A | == | == |  YES  |    |                |    | 1 |  A |    |    |       |
++---+----+----+----+-------+    2   ------->>>   |    +---+----+----+----+-------+
+| 2 |  A | == | == |  YES  |    |                |    | 1 |  A |    |    |       |
++---+----+----+----+-------+    3   ------->>>   |    +---+----+----+----+-------+
+| 3 |  A | == | == |  YES  |    |                |    | 1 |  A |    |    |       |
++---+----+----+----+-------+    4   ------->>>   |    +---+----+----+----+-------+
+| 4 |  A | == | == |  YES  |    |                |    | 1 |  A |    |    |       |
++---+----+----+----+-------+    5   ------->>>   |    +---+----+----+----+-------+
+| 5 |  A | == | == |  YES  |    |           |    |    | 1 |  A |    |    |       |
++---+----+----+----+-------+    |           +--- 2    +---+----+----+----+-------+
+| 5 |  A |    |    |       |    |           |    |    | 1 |  A |  > | == |   NO  |
++---+----+----+----+-------+    2   <<<-------  2/3   +---+----+----+----+-------+
+| 5 |  A |  < | == |  YES  |    |           |    |    | 2 |  A |  > | == |   NO  |
++---+----+----+----+-------+    3   <<<-------  3/4   +---+----+----+----+-------+
+| 5 |  A |  < | == |  YES  |    |           |    |    | 3 |  A |  > | == |   NO  |
++---+----+----+----+-------+    4   <<<-------  4/5   +---+----+----+----+-------+
+| 5 |  A |  < | == |  YES  |    |                |    | 4 |  A |  > | == |   NO  |
++---+----+----+----+-------+    5   <<<-------   5    +---+----+----+----+-------+
+| 5 |  A | == | == |  YES  |    |                |    | 5 |  A |    |    |       |
++---+----+----+----+-------+    ~                ~    +---+----+----+----+-------+
+
+LEGENDA
+=======
+SEQ        : Static variable containing sequence number of last broadcast-session
+LAST SRC   : Static variable containing src address responsible for the 
+             last broadcast-session
+EQ SEQ     : Comparison of the received sequence number against 'SEQ'
+EQ SRC     : Comparison of the source of the received broadcast against 'LAST SRC'
+DISCARD    : YES when: (RCVD_SEQ <= SEQ) && (RCVD_SRC != LAST SRC)
+YES        : Received broadcast is a duplicate and can be discarded without 
+             further due
+NO         : Received broadcast isn't a duplciate and is rebroadcasted on 
+             the network
+2/3        : Sent broadcast with sequence number 2 and received broadcast 
+             with sequence number 3
+```
