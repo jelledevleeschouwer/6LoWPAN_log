@@ -291,3 +291,14 @@ NO         : Received broadcast isn't a duplciate and is rebroadcasted on
 2/3        : Sent broadcast with sequence number 2 and received broadcast
              with sequence number 3
 ```
+
+##### 08 Sep 2015 10h -   [Update] - Duplicate broadcast suppression.
+After reading through [RFC4944](http://tools.ietf.org/html/rfc4944) again to find out if their really wasn't a possibility to do the suppression of duplicate broadcast better I discover following sentence in the beginning of the RFC:
+> ... A LoWPAN encapsulated LOWPAN_HC1 compressed IPv6 datagram that requires both mesh addressing and a broadcast header to support mesh broadcast/multicast: ...
+Appears I wasn't attentive enough while reading the first time. What above quote means is that, if you want to sent broadcast frame in a mesh-under 6LoWPAN network it always has to be prepended with a MESH-addressing header. 
+
+As a result, the updating of the source address when forwarding a frame, like I described [yesterday](https://github.com/jelledevleeschouwer/sixlowpan_log#07-sep-2015-23h-----broadcast-transmissionforwarding-and-duplicate-suppression), *can* be implemented. With the MESH-addressing header you have access to the actual origin of the source as well as the sequence number of that source in the LOWPAN_BC0-header. So with updating the Link Layer source, we don't lose context with which we can decompress the addresses later on.
+
+**!REMARK!**: But the sharing of sequence number would still be needed. If a device isn't capable of updating his sequence number before he already receives another broadcast frame, he will definitely not detect a duplicate for that last and following broadcast-frames.
+
+In summary, this means I have quite some work to do.
