@@ -314,3 +314,6 @@ Secondly, the same amount of packet loss is experienced when nodes moved further
 So I'm thinking in the direction of timing issues on PHY level. My first guess is that the phy receives/sent frames before he's ready to sent or receive another frame.
 
 Can't say with certainty though, I'm looking into it further.
+
+##### 02 Feb 2016 00h -   Transmitting causes the packets to be lost...
+Okay, since the 6LBR doesn't seem to have any trouble with packet loss, the cause of the packet loss is kind of located. It means something is going wrong when a node is transmitting frames as well. As the 6LBR doesn't send any packets, and every packet sent from receiving neighbours is received by the 6LBR. I think I'm on the right track with this.. :D
