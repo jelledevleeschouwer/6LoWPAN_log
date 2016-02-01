@@ -305,3 +305,12 @@ As a result, the updating of the source address when forwarding a frame, like I 
 **!REMARK!**: But the sharing of sequence number would still be needed. If a device isn't capable of updating his sequence number before he already receives another broadcast frame, he will definitely not detect a duplicate for that last and following broadcast-frames.
 
 In summary, this means I have quite some work to do.
+
+##### 01 Feb 2016 20h -   Huge amount of packet loss.
+In the 6LoWPAN demo on the Atmel ATSAMR21 Xplained development boards, i've noticed huge amount of packet loss.
+I kind of doubt interference and noise is the cause of this packet loss since in the first place, **it's a lot**, something like 90% packet loss.
+Secondly, the same amount of packet loss is experienced when nodes moved further away from each other, which is weird if the packet loss would be caused by interference.
+
+So I'm thinking in the direction of timing issues on PHY level. My first guess is that the phy receives/sent frames before he's ready to sent or receive another frame.
+
+Can't say with certainty though, I'm looking into it further.
