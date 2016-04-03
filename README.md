@@ -317,3 +317,101 @@ Can't say with certainty though, I'm looking into it further.
 
 ##### 02 Feb 2016 00h -   Transmitting causes the packets to be lost...
 Okay, since the 6LBR doesn't seem to have any trouble with packet loss, the cause of the packet loss is kind of located. It means something is going wrong when a node is transmitting frames as well. As the 6LBR doesn't send any packets, and every packet sent from receiving neighbours is received by the 6LBR. I think I'm on the right track with this.. :D
+
+##### 23 Feb 2016 15h -   Test
+
+##### 03 Apr 2016 23h -   6LoWPAN - What happens when you press enter.
+
+####### Or in other words, IPv6 wants to send a frame over a PAN, what has to happen?
+
+When IPv6 sends a frame to either the device or the datalink-layer it calls
+```pico_sendto_dev(dev);``` in this function in the stack, the frame (pico_frame)
+is enqueued in the outgoing frame-queue of the particular device. On another
+time, when the scheduler wants to, the frame dequeued from the devices queue when
+the scheduler iterates over the device-tree, this process is very well explained
+in the [wiki](https://github.com/tass-belgium/picotcp/wiki/protocols).
+
+
+Now, in devloop_out the frame can either go straight to the device, this is for
+devices that work with raw IP-frames like PPP-devices, or the frame can first pass
+through a datalink-layer which transmits the frame on the network, through
+the device-driver, in it's turn. The latter is where 6LoWPAN comes into play.
+To fit 6LoWPAN in the TCP/IP-model we consider it a datalink-protocol. Thus, in
+```devloop_out()```, the subroutine the scheduler calls (explained above), the
+frame is send through the 6LoWPAN-adaption layer by means of calling
+```pico_sixlowpan_send(f)```. This is identical to how the frame passes through
+the ethernet-layer.
+
+
+So the frame is now in the 6LoWPAN-adaption layer. What happens here? For the
+sake of simplicity I'll consider the case of P2P-communication, thus no meshing.
+First, the adaption layer tries to compress the IPv6-header following the
+LOWPAN_IPHC-compression scheme ([RFC6282](https://tools.ietf.org/html/rfc6282)).
+First the IPv6 traffic class and flow label are compressed, which are
+straight-forward operations. But then the source- and destination IPv6-addresses
+are compressed, which is a whole other thing.
+First the source-address. This address
+can be **link-local**; the link-local prefix is elided and only the Interface
+Identifier (IID) is left as-is. Or the source-address can be **unicast**; if
+there's a context available in the context-table (a table containing entries with
+*context identifiers (CID)*, an ID ranging from 0-15 to identify frequently used
+IPv6 network-prefixes), the CID is inserted in the header and the prefixe is elided,
+the receiving host can derive the IPv6-address from it's own context-table, this
+concept is called stateful compression. When there's no prefix available the
+source address is carried in-line as is.
+The destination-address can be **link-local**, **unicast** or **multicast**. The
+former 2 cases are the same as with the source-address, in the multicast-case,
+the compression scheme depends on the multicast address, but this is pretty
+straight-forward as well.
+Finally the hop-limit is compressed and also the next-header following the
+NHC-compression scheme defined in
+([RFC6282](https://tools.ietf.org/html/rfc6282)). Further explanation would
+drive me too far.
+
+
+The compression all happens in the pico_frame-structure itself, which fucks up
+the structure kind of a lot, but hey, transmission is a one-way ticket, right?
+It's not that we want to send the transmitted frame back to upper layers, if it
+wanted to, it could've kept some state itself.
+
+
+Now we need to sent the frame. Does the frame fit inside a single IEEE802.15.4
+with a maximum MAC-MTU of 127 bytes? Remember that the MAC-header (MHR) also
+needs to fit inside this frame. So, how do we know how much room do we have
+before we actually provided the mac-header? This should be done in the
+IEEE802.15.4-layer, not in the 6LoWPAN-adaption layer (different
+responsibilities for different layers, very important to support future link-layer
+protocols like for example 6LoWPAN-over-Bluetooth). So at this moment, what we
+do is, we try to send the frame already through the IEE802.15.4-layer. In this
+way the IEEE802.15.4-layer gets the link-layer addresses needed for transmission
+and tries to fit the frame inside it's own buffer. If it fits, perfect, nice, frame
+is immediatelly transmitted as it should. If it doesn't fit however, the
+IEEE802.15.4-layer returns the amount of bytes it actually has available after
+providing it's link-layer MAC-header. This amount is key for the next step.
+
+
+The frame didn't fit inside a single IEEE802.15.4-frame, what now? :) Okay,
+fragementing. Based on the available size we provide a buffer, prepend a
+LOWPAN_FRAG-header [RFC4944](https://tools.ietf.org/html/rfc4944), and copy in
+a part out of the ```buffer``` inside ```pico_frame```. This buffer is then again
+sent through the IEEE802.15.4-layer, where the transmission should normally
+succeed. BUT, we *also* give the original ```pico_frame``` a fragmentation-ID
+and keep some fragmentation state for that frame. So we can identify the frame
+later on. Because what we do then is indicate to the stack
+that the transmission *failed* by returning an error. The stack will then
+instead of discarding the frame, which happens on succes, keep the frame in the
+device-queue. When the frame is retried, we can look for the ID in the
+fragmentation-state tree and immediatelly send the next fragment without having
+to compress again, since the compression happens straight in ```pico_frame```.
+
+What with meshing now? Well, if we use link-layer meshing, we just prepend some
+dispatch headers before the buffer in the IEEE802.15.4-layer. If the frame
+doesn't fit after prepending the headers, the frame is fragmented in the
+6LoWPAN-layer. This should all be done in IEEE802.15.4-layer though,
+not in the 6LoWPAN-layer (mesh-under topology).
+With network routing (route-over topology), everything needed to transmit the frame
+is already taken into account, so the frame can just be transmitted as-is. The
+link-layer addresses are found in the IEEE802.15.4-layer by just asking the
+network-layer or mesh-routing-layer to look for them in their routing table.
+
+Simple as that. Done. ;)
