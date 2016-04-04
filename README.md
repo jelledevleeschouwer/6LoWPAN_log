@@ -318,8 +318,6 @@ Can't say with certainty though, I'm looking into it further.
 ##### 02 Feb 2016 00h -   Transmitting causes the packets to be lost...
 Okay, since the 6LBR doesn't seem to have any trouble with packet loss, the cause of the packet loss is kind of located. It means something is going wrong when a node is transmitting frames as well. As the 6LBR doesn't send any packets, and every packet sent from receiving neighbours is received by the 6LBR. I think I'm on the right track with this.. :D
 
-##### 23 Feb 2016 15h -   Test
-
 ##### 03 Apr 2016 23h -   6LoWPAN - What happens when you press enter.
 
 ####### Or in other words, IPv6 wants to send a frame over a PAN, what has to happen?
@@ -398,11 +396,12 @@ sent through the IEEE802.15.4-layer, where the transmission should normally
 succeed. BUT, we *also* give the original ```pico_frame``` a fragmentation-ID
 and keep some fragmentation state for that frame. So we can identify the frame
 later on. Because what we do then is indicate to the stack
-that the transmission *failed* by returning an error. The stack will then
-instead of discarding the frame, which happens on succes, keep the frame in the
-device-queue. When the frame is retried, we can look for the ID in the
-fragmentation-state tree and immediatelly send the next fragment without having
-to compress again, since the compression happens straight in ```pico_frame```.
+that the transmission *semi-failed* by returning 0. This indicates dat we indeed did not sent
+the entire frame. The stack will then instead of discarding the frame (which happens on succes) 
+keep the frame in the device's outgoing frame-queue. 
+When the frame is retried, we can look for the ID in the fragmentation-state tree 
+and immediatelly send the next fragment without having to compress again, 
+since the compression happens straight in ```pico_frame``` itself.
 
 What with meshing now? Well, if we use link-layer meshing, we just prepend some
 dispatch headers before the buffer in the IEEE802.15.4-layer. If the frame
